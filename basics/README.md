@@ -41,7 +41,7 @@ Keep the [query cheat sheet](query-cheat-sheet.md) open next to you. It is one p
 | --- | --- |
 | Database | Your own Oracle 19c, installed on your laptop |
 | Tool | DBeaver Community |
-| Admin user | `SYSTEM`, password `NobleProg@123`, only to create the lab user |
+| Admin user | `SYSTEM`, password `NobleProg123`, only to create the lab user |
 | Lab user | `FAB_LAB`, password `Lab_2026`, in your PDB |
 | Scripts | [`lab0_create_user.sql`](labs/scripts/lab0_create_user.sql) and [`lab1_fab_lab_data.sql`](labs/scripts/lab1_fab_lab_data.sql) |
 

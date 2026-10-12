@@ -2,17 +2,17 @@
 -- FAB_LAB data: 5 tables of an invented wafer fab.
 -- Run as FAB_LAB (password Lab_2026), connected to your PDB.
 -- DBeaver: open this file, then Execute Script (Alt+X).
--- Safe to run again: it drops and re-creates its own tables.
+-- To run it again, first drop the five tables (the commented block below does this).
 -- The last query is a check. Expect 5, 9, 16, 66 and 186 rows.
 -- =====================================================================
 
-BEGIN
-  FOR t IN (SELECT table_name FROM user_tables
-            WHERE table_name IN ('MEASUREMENTS','WAFERS','LOTS','TOOLS','PRODUCTS')) LOOP
-    EXECUTE IMMEDIATE 'DROP TABLE ' || t.table_name || ' CASCADE CONSTRAINTS PURGE';
-  END LOOP;
-END;
-/
+-- BEGIN
+--   FOR t IN (SELECT table_name FROM user_tables
+--             WHERE table_name IN ('MEASUREMENTS','WAFERS','LOTS','TOOLS','PRODUCTS')) LOOP
+--     EXECUTE IMMEDIATE 'DROP TABLE ' || t.table_name || ' CASCADE CONSTRAINTS PURGE';
+--   END LOOP;
+-- END;
+-- /
 
 CREATE TABLE products (
   product_id     NUMBER(4)     CONSTRAINT products_pk PRIMARY KEY,

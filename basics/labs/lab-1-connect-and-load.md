@@ -64,7 +64,7 @@ If DBeaver Community is not installed yet, install it from the DBeaver website w
 | Port | `1521` |
 | Database | your PDB service name from step 2. Choose **Service Name**, not SID. |
 | Username | `SYSTEM` |
-| Password | `NobleProg@123` (the password chosen when Oracle was installed) |
+| Password | `NobleProg123` (the password chosen when Oracle was installed) |
 
 4. Click **Test Connection**. The first time, DBeaver offers to download the Oracle driver files. Click **Download** and wait. This needs internet once.
 5. When the test says **Connected**, click **Finish**.
@@ -123,7 +123,7 @@ The script finishes with a small table of row counts. It must read:
 | WAFERS | 66 |
 | MEASUREMENTS | 186 |
 
-If a count is wrong, run the script again. It starts by dropping its own tables, so a second run is safe.
+If a count is wrong, the tables may be half-loaded. Drop them (uncomment the DROP block at the top of the script) and run the script again.
 
 ## Step 8: Look around
 
@@ -158,7 +158,7 @@ Tick each box before you move on.
 | ORA-01918 on the first run of lab 0 | Not an error. The user did not exist yet | The script handles it. Carry on |
 | DBeaver asks to download drivers and fails | No internet | Connect to the internet, then try again |
 
-If you use SQL\*Plus instead of DBeaver and the password contains `@`, wrap it in double quotes: `sqlplus system/"NobleProg@123"@//localhost:1521/yourpdb`.
+If you use SQL*Plus instead of DBeaver, connect with: `sqlplus system/NobleProg123@//localhost:1521/yourpdb`. If a password ever contains `@`, wrap it in double quotes.
 
 ## Further reading
 
