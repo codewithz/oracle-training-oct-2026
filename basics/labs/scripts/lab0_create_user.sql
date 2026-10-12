@@ -1,8 +1,13 @@
 -- =====================================================================
--- Basics course: create the lab user FAB_LAB
--- Run as SYSTEM, connected to your PLUGGABLE database (the PDB).
--- Safe to run more than once: it drops FAB_LAB first if it exists.
+-- FALLBACK ONLY: create FAB_LAB when you are connected to the ROOT (orcl)
+-- and not to a PDB. Use lab0_create_user.sql instead whenever you can
+-- connect to your PDB (orclpdb).
+-- Run as SYSTEM, connected to orcl. Safe to run more than once.
+-- The hidden parameter below lets a plain user name (no C## prefix)
+-- be created in the root. It is meant for a throwaway training laptop.
 -- =====================================================================
+
+ALTER SESSION SET "_ORACLE_SCRIPT" = TRUE;
 
 BEGIN
   EXECUTE IMMEDIATE 'DROP USER fab_lab CASCADE';
