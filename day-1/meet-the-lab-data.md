@@ -2,8 +2,6 @@
 
 All the SQL on Day 1, and most of the rest of the week, runs against one small schema called FAB_LAB. It is an invented wafer fab: five products, nine tools, sixteen lots, sixty-six wafers and a few measurements per wafer. The names and numbers are made up for the course, so nothing here describes a real company's process. The point of the schema is that it is small enough to check by eye and close enough to a real fab that the questions make sense.
 
-Slides: 21 of the Day 1 deck.
-
 Ten minutes spent on this page makes Labs 3 to 5 much easier. Most mistakes in those labs come from joining the wrong columns. The SQL feature being practised is rarely the problem.
 
 ## The five tables
@@ -32,6 +30,55 @@ wafers.lot_id           = lots.lot_id
 measurements.wafer_id   = wafers.wafer_id
 measurements.tool_id    = tools.tool_id
 lots.parent_lot_id      = lots.lot_id      -- a lot and its parent: the family tree
+```
+
+The same schema as an entity-relationship diagram, with every column, its type and its keys. A crow's foot marks the "many" side; an `o` means the link is optional.
+
+```mermaid
+erDiagram
+    PRODUCTS ||--o{ LOTS : "is made in"
+    LOTS |o--o{ LOTS : "is parent of"
+    LOTS ||--o{ WAFERS : holds
+    WAFERS ||--o{ MEASUREMENTS : "is measured in"
+    TOOLS ||--o{ MEASUREMENTS : takes
+
+    PRODUCTS {
+        NUMBER product_id PK
+        VARCHAR2 product_code UK
+        VARCHAR2 family
+        NUMBER diameter_mm
+        NUMBER target_thk_nm
+    }
+    TOOLS {
+        VARCHAR2 tool_id PK
+        VARCHAR2 tool_type
+        VARCHAR2 bay
+    }
+    LOTS {
+        VARCHAR2 lot_id PK
+        NUMBER product_id FK
+        VARCHAR2 lot_type "PROD, SPLIT or REWORK"
+        VARCHAR2 parent_lot_id FK "NULL for PROD lots"
+        DATE start_date
+        VARCHAR2 status "ACTIVE, HOLD, SHIPPED or SCRAPPED"
+        NUMBER priority "1 is most urgent"
+        VARCHAR2 hold_reason
+    }
+    WAFERS {
+        VARCHAR2 wafer_id PK
+        VARCHAR2 lot_id FK
+        NUMBER slot_no
+        VARCHAR2 grade "PRIME, TEST, SCRAP or NULL"
+    }
+    MEASUREMENTS {
+        NUMBER meas_id PK
+        VARCHAR2 wafer_id FK
+        VARCHAR2 step "SPLIT, ANNEAL or FINAL"
+        VARCHAR2 tool_id FK
+        DATE meas_time
+        NUMBER thickness_nm
+        NUMBER defect_count
+    }
 ```
 
 The units are in the column names: `thickness_nm` and `target_thk_nm` are nanometres, `diameter_mm` is millimetres. That habit is worth copying. In 1999 NASA lost the Mars Climate Orbiter because one team's software produced thruster data in pound-force seconds while the navigation software expected newton-seconds. A column called `thickness` with no unit invites the same kind of mistake.
@@ -80,6 +127,14 @@ L26-003B1           1 REWORK   L26-003B   2026-08-20 13:00 ACTIVE            1
 ```
 
 L26-003 was split into L26-003A and L26-003B. L26-003B came out too thick at FINAL, went on HOLD, and was reworked into L26-003B1. That gives a three-level family tree, and it is what the hierarchical queries in Lab 5 walk. A second, smaller tree starts at L26-007.
+
+```mermaid
+flowchart TD
+    A["L26-003<br/>PROD, ACTIVE"] -->|split| B["L26-003A<br/>SPLIT, SHIPPED"]
+    A -->|split| C["L26-003B<br/>SPLIT, HOLD"]
+    C -->|rework| D["L26-003B1<br/>REWORK, ACTIVE"]
+    E["L26-007<br/>PROD"] -->|split| F["L26-007A<br/>SPLIT"]
+```
 
 In a substrate fab the family tree can matter a great deal: when a customer reports a problem, you need every lot that shares an ancestor with the bad one. A family tree of people is the easiest way to picture it, with the one difference that a lot can only ever have one parent.
 

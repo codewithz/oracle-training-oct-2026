@@ -2,8 +2,6 @@
 
 In this lab you query the lot genealogy of FAB_LAB as a tree, and you build reports with subtotals, chosen totals, rows turned into columns and values joined into lists. Part C (C1 to C4) is about hierarchical queries; part D (D1 to D4) is about advanced grouping and aggregation.
 
-Slides: 32 of the Day 1 deck.
-
 | | |
 | --- | --- |
 | Time | 30 minutes. If you are still in part C after about 15 minutes, move on to part D |

@@ -2,8 +2,6 @@
 
 Reports with subtotals and grand totals are among the most common requests a database person gets. This page shows the GROUP BY extensions that produce several levels of totals in one query (ROLLUP, CUBE and GROUPING SETS), the GROUPING and GROUPING_ID functions that tell a subtotal row from a detail row, and two ways of reshaping a result: PIVOT, which turns rows into columns, and LISTAGG, which joins values into one string.
 
-Slides: 31 and 32 of the Day 1 deck.
-
 ## Why one query instead of several
 
 Suppose you need FINAL readings and defects per metrology tool, a subtotal per bay and a grand total. With plain GROUP BY that is three queries glued together with UNION ALL, and the table is read three times. A GROUP BY extension computes all levels in one pass over the data and returns them in one result.
@@ -33,6 +31,13 @@ B4                    21         99
 ```
 
 The rows with an empty TOOL_ID are the bay subtotals, and the row with both columns empty is the grand total. On a subtotal row, the columns that were rolled up are NULL. It reads like a supermarket receipt that prints a subtotal under each bag and the grand total at the bottom, with the bays as the bags and the tools as the items.
+
+The levels that `ROLLUP (bay, tool_id)` produces:
+
+```mermaid
+flowchart TB
+    L0["(bay, tool_id)<br/>detail rows"] --> L1["(bay)<br/>bay subtotals"] --> L2["()<br/>grand total"]
+```
 
 ### The NULL problem
 

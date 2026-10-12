@@ -2,8 +2,6 @@
 
 This page explains how Oracle describes itself. The data dictionary views (USER_, ALL_, DBA_ and, in a container database, CDB_) describe the objects in the database. The dynamic performance views (V$) describe the running instance: sessions, SQL, waits, memory and files. The DICTIONARY view lists them all. The page ends with queries you will use all week.
 
-Slides: 18 of the Day 1 deck.
-
 ## What the data dictionary is
 
 The **data dictionary** is a set of read-only tables and views that describe the database: every table, column, index, constraint, user, privilege, PL/SQL unit and storage allocation. Oracle maintains it itself. When you run `CREATE TABLE`, Oracle records the new table in the dictionary; when you query, Oracle reads the dictionary to check that the table exists and that you may use it.
@@ -22,6 +20,13 @@ Most dictionary views come in a set with the same suffix and different prefixes:
 | `ALL_` | What you can access: what you own plus what you have been granted | Every user |
 | `DBA_` | Everything in the database (in a CDB: in the current container) | Administrators |
 | `CDB_` | Everything in all containers of a CDB | Administrators, in the root |
+
+```mermaid
+flowchart TB
+    CDB["CDB_ views<br/>all containers"] --> DBA["DBA_ views<br/>whole current container"]
+    DBA --> ALL["ALL_ views<br/>what you can access"]
+    ALL --> USER["USER_ views<br/>what you own"]
+```
 
 In catalogue terms, `USER_` is the list of books on your own loan card, `ALL_` adds every book you are allowed to borrow, and `DBA_` is the library's whole holding. So there are `USER_TABLES`, `ALL_TABLES`, `DBA_TABLES` and `CDB_TABLES`, and the same pattern for `_OBJECTS`, `_TAB_COLUMNS`, `_INDEXES`, `_CONSTRAINTS`, `_SOURCE` and hundreds more.
 

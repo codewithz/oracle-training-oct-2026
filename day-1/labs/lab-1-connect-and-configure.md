@@ -2,8 +2,6 @@
 
 In this lab you check that you can reach your own Oracle 19c database through the listener, connect as SYSTEM to the root and to the PDB, and read how the database is configured: its containers and open modes, the services it offers, its character set, its parameter file and a few parameters. Then you create the lab user FAB_LAB in the PDB and load the lab data that Labs 2 to 5 use.
 
-Slides: 11 of the Day 1 deck.
-
 | | |
 | --- | --- |
 | Time | 25 minutes |
@@ -39,6 +37,18 @@ Two habits help all day:
 
 1. Know which container you are in. Run `SHOW CON_NAME` whenever in doubt. The course user and its tables belong in the PDB, never in `CDB$ROOT`. In January 2017 a GitLab engineer meant to wipe the data directory on the secondary database server and ran the command on the primary instead; about six hours of data was lost. Two clearly named connections, `system-root` and `system-pdb`, are the cheap version of that lesson.
 2. Read the error number first. ORA-12514, ORA-01109 and ORA-65096 each have a short fix; see [Troubleshooting](#troubleshooting).
+
+The steps of this lab:
+
+```mermaid
+flowchart LR
+    S1["1. lsnrctl status"] --> S2["2. Connect as SYSTEM<br/>root and PDB"]
+    S2 --> S3["3. Run lab1 script in root"]
+    S3 --> S4["4. Open PDB, SAVE STATE"]
+    S4 --> S5["5. Create FAB_LAB in PDB"]
+    S5 --> S6["6. Load lab data as FAB_LAB"]
+    S6 --> S7["7. EM Express (optional)"]
+```
 
 ## Step 1: Read your service names from the listener
 

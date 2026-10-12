@@ -2,8 +2,6 @@
 
 In this lab you look at the architecture of your own database from three sides. First, as SYSTEM, you read the memory, the background processes and the files of the instance from V$ views. Then, as FAB_LAB in two separate sessions, you see read consistency and row locking happen. Last, still as FAB_LAB, you use the data dictionary to describe the lab schema: its tables, foreign keys, indexes and segments.
 
-Slides: 19 of the Day 1 deck.
-
 | | |
 | --- | --- |
 | Time | 35 minutes: part 1 about 15, part 2 about 10, part 3 about 10 |
@@ -75,6 +73,21 @@ Run each statement on its own with Ctrl+Enter, in this order. Do not COMMIT anyt
 | 5 | 1 | `ROLLBACK;` | Rollback complete |
 | 6 | 2 | (look at the result of step 4) | Question 10 |
 | 7 | 2 | `ROLLBACK;` | Rollback complete |
+
+```mermaid
+sequenceDiagram
+    participant W1 as Worksheet 1
+    participant DB as Database
+    participant W2 as Worksheet 2
+    W1->>DB: UPDATE L26-010 to HOLD (no commit)
+    W1->>DB: SELECT sees HOLD
+    W2->>DB: SELECT sees the old value (from undo)
+    W2->>DB: UPDATE same row
+    Note over W2,DB: Waits for the row lock
+    W1->>DB: ROLLBACK
+    DB-->>W2: Lock released, UPDATE completes
+    W2->>DB: ROLLBACK
+```
 
 Step 4 changes nothing in the data (it sets the priority to its own value), but it is still an UPDATE of the row, so it needs that row.
 

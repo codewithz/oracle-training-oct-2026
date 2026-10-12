@@ -11,6 +11,15 @@ These pages are the reading material for the four-day course. They follow the sl
 | 3 | Advanced PL/SQL: collections, BULK COLLECT and FORALL, dynamic SQL, records. Error handling and debugging. PL/SQL best practices |
 | 4 | Performance tuning: optimisation, execution plans, indexing, hints. Advanced SQL: joins, recursive queries, regular expressions, full-text search. Course summary |
 
+```mermaid
+flowchart LR
+    D1["Day 1<br/>Oracle 19c architecture<br/>SQL review and advanced SQL"]
+    D2["Day 2<br/>PL/SQL basics<br/>Program units"]
+    D3["Day 3<br/>Advanced PL/SQL<br/>Error handling, best practices"]
+    D4["Day 4<br/>Performance tuning<br/>Advanced SQL, summary"]
+    D1 --> D2 --> D3 --> D4
+```
+
 Day 1 is available now. The pages for Days 2 to 4 will be added as the course goes on.
 
 ## Before the first day

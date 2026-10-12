@@ -2,8 +2,6 @@
 
 This page explains how a 19c database is organised as a container database (CDB) that holds pluggable databases (PDBs). It covers the root and the seed, the difference between common and local users, how to find out which container you are in, and the open modes a PDB can be in.
 
-Slides: 7 of the Day 1 deck.
-
 ## Container databases and pluggable databases
 
 Before 12c, every Oracle database was a single unit: one set of data dictionary tables, one set of users, one application (or several squeezed into one). Oracle now calls that a **non-CDB**.
@@ -17,6 +15,21 @@ Every CDB has these containers:
 | Root | `CDB$ROOT` | Oracle-supplied metadata and common users. No application data |
 | Seed | `PDB$SEED` | A system-supplied template used to create new PDBs. You cannot add or change objects in it |
 | Pluggable databases | Your choice, for example `ORCLPDB` | Application schemas and data. This is where you work |
+
+The layout of a CDB. All containers share one instance, and each has its own data files:
+
+```mermaid
+flowchart TB
+    subgraph INST["One instance: one SGA, one set of background processes"]
+        subgraph CDB["Container database ORCL"]
+            ROOT["CDB$ROOT<br/>Oracle metadata, common users"]
+            SEED["PDB$SEED<br/>template for new PDBs"]
+            PDB1["ORCLPDB<br/>FAB_LAB and your data"]
+            PDB2["Other PDBs<br/>up to 3 without the Multitenant option"]
+        end
+    end
+    SEED -. "cloned to create" .-> PDB1
+```
 
 A block of flats is a fair picture of this. The building, with its lifts, wiring and plumbing, is the instance that every flat shares. Each flat is a PDB with its own front door, furniture and residents. The root is the management office on the ground floor, where nobody lives, and PDB$SEED is the show flat that new flats are copied from.
 
@@ -177,6 +190,18 @@ A PDB has its own open mode, separate from the CDB. The ones you will see are:
 | `MOUNTED` | The PDB is closed. Only administrators with a privilege such as SYSDBA can connect |
 | `READ WRITE` | Normal working state |
 | `READ ONLY` | Queries only. The seed is always in this mode |
+
+```mermaid
+stateDiagram-v2
+    [*] --> MOUNTED : CDB starts, PDB not opened
+    MOUNTED --> READ_WRITE : ALTER PLUGGABLE DATABASE OPEN
+    READ_WRITE --> MOUNTED : ALTER PLUGGABLE DATABASE CLOSE
+    READ_WRITE --> READ_ONLY : reopen READ ONLY
+    READ_ONLY --> MOUNTED : CLOSE
+    MOUNTED --> READ_WRITE : after restart, if SAVE STATE was run
+    READ_WRITE : READ WRITE
+    READ_ONLY : READ ONLY
+```
 
 When the CDB starts, Oracle opens the root, but the other containers are mounted. A PDB only opens automatically at startup if you have saved its open state. Without that, users of the PDB get ORA-01109: database not open after every restart. As SYSTEM in the root:
 

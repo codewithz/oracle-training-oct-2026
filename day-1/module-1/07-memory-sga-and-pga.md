@@ -2,8 +2,6 @@
 
 This page describes the two kinds of memory an Oracle instance uses: the System Global Area (SGA), which all sessions share, and the Program Global Area (PGA), which is private to each process. It lists what lives in each area, how Oracle sizes them automatically, and how to see the sizes on your own instance with `V$SGAINFO` and `V$PARAMETER`.
 
-Slides: 13 of the Day 1 deck.
-
 ## Two kinds of memory
 
 An Oracle instance is memory plus processes (see [Instance and database](06-instance-and-database.md)). The memory comes in two kinds.
@@ -23,6 +21,24 @@ The table on the slide sums up both areas:
 | Redo log buffer (SGA) | Change records waiting for LGWR | Every COMMIT flushes it |
 | Large and Java pools (SGA) | Shared server, parallel query, backup; Java | Rarely tuned by developers |
 | PGA (per process) | Sort and hash areas, session and package variables | Package state is per session (Day 2); big sorts spill to TEMP |
+
+```mermaid
+flowchart TB
+    subgraph SGA["SGA: shared by all processes"]
+        BC["Buffer cache"]
+        SP["Shared pool<br/>library cache, dictionary cache"]
+        RB["Redo log buffer"]
+        LP["Large pool, Java pool"]
+    end
+    subgraph PGA1["PGA of server process 1"]
+        W1["Sort and hash areas<br/>session state"]
+    end
+    subgraph PGA2["PGA of server process 2"]
+        W2["Sort and hash areas<br/>session state"]
+    end
+    PGA1 --- SGA
+    PGA2 --- SGA
+```
 
 ## The SGA components
 

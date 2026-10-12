@@ -2,8 +2,6 @@
 
 This page explains the processes that make up an Oracle instance: the server processes that run your SQL, and the background processes that write data and redo to disk, record checkpoints, recover after a crash and clean up after failed sessions. It also shows how to list them with `V$BGPROCESS`, `V$PROCESS` and `V$SESSION`.
 
-Slides: 14 of the Day 1 deck.
-
 ## Server processes and background processes
 
 When you connect to Oracle, your tool (SQL Developer, SQL*Plus, an application) is a **client process**. It never touches the database files itself. Oracle creates a **server process** to handle the requests of each client, and the client always talks to the database through that server process. With the usual dedicated server setup, each session gets its own server process. That server process parses and runs your SQL, reads blocks into the buffer cache and returns rows to your tool.
@@ -25,6 +23,20 @@ The test instance used to prepare this course had between 64 and 78 background p
 | PMON | Cleans up after failed sessions: releases locks, rolls back |
 | ARCn | Copies full online redo logs to archive logs (ARCHIVELOG mode only) |
 | MMON, LREG | Performance snapshots; registers services with the listener |
+
+How the main processes work together:
+
+```mermaid
+flowchart LR
+    CL["Client"] --> SP["Server process"]
+    SP --> BC["Buffer cache"]
+    SP --> RB["Redo log buffer"]
+    RB -- "LGWR writes at COMMIT" --> RL[("Online redo logs")]
+    BC -- "DBWn writes later" --> DF[("Data files")]
+    CKPT["CKPT"] -. "checkpoint info" .-> DF
+    ARC["ARCn"] -. "copies full logs" .-> AL[("Archive logs")]
+    RL --> ARC
+```
 
 ### DBWn: database writer
 

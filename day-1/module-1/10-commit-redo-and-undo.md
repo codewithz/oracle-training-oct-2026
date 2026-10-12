@@ -2,8 +2,6 @@
 
 This page follows a transaction through the instance: what an UPDATE changes in memory, what a COMMIT waits for, and how Oracle recovers committed work after a crash. It then explains undo, which gives you ROLLBACK and read consistency, and the ORA-01555 "snapshot too old" error that appears when undo runs out for a long query.
 
-Slides: 16 of the Day 1 deck.
-
 ## A transaction in three steps
 
 Take an invented example from the FAB_LAB wafer fab: a user puts lot L26-010 on hold.
@@ -31,6 +29,24 @@ COMMIT does not wait for the changed data blocks to reach the data files. This i
 ### 3. Later
 
 DBWn writes the dirty block to the data file whenever it suits: when buffers are needed, or at a checkpoint. That can be seconds or minutes later, and it can even happen before the commit. Before writing a block, DBWn makes sure the redo for it is already on disk (the write-ahead rule).
+
+The sequence for the UPDATE and COMMIT above:
+
+```mermaid
+sequenceDiagram
+    participant U as User session
+    participant BC as Buffer cache
+    participant RB as Redo log buffer
+    participant LG as LGWR
+    participant DB as DBWn
+    U->>BC: UPDATE: change block, store old value as undo
+    U->>RB: Write redo entries
+    U->>RB: COMMIT: add commit record
+    RB->>LG: Flush redo
+    LG-->>U: Redo is on disk, COMMIT returns
+    Note over DB: Later, at a checkpoint or when buffers are needed
+    DB->>BC: Write dirty block to data file
+```
 
 ## Why the redo is enough
 

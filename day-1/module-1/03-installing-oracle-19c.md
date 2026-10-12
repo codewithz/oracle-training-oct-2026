@@ -2,8 +2,6 @@
 
 This page explains the ideas behind a 19c installation on Windows: what the Oracle base and Oracle home are, what an image-based install is, what the setup wizard and DBCA each do, which Windows services you end up with, and why the character set choice matters. It does not repeat the click-by-click steps; those are in [Install Oracle Database 19c on Windows](../../before-you-start/install-oracle-19c-windows.md).
 
-Slides: 8 of the Day 1 deck.
-
 ## The install at a glance
 
 The slide summarises the course install in five steps:
@@ -15,6 +13,16 @@ The slide summarises the course install in five steps:
 | 3 | Oracle Home user: virtual account. Character set: AL32UTF8 | Correct Unicode from day one |
 | 4 | Container database ORCL with one PDB, ORCLPDB | A CDB and a PDB |
 | 5 | Apply the latest Release Update with OPatch | 19.3 is only the base release |
+
+```mermaid
+flowchart LR
+    A["Create the Oracle home folder"] --> B["Unzip 19.3 into it"]
+    B --> C["Run setup.exe"]
+    C --> D["Setup registers the software"]
+    D --> E["DBCA creates CDB ORCL and PDB ORCLPDB"]
+    E --> F["Services start, listener on 1521"]
+    F --> G["Apply a Release Update with OPatch"]
+```
 
 The result is a running database: the Windows services for the instance and the listener, the listener on port 1521, and EM Express on port 5500. The sections below explain each idea.
 

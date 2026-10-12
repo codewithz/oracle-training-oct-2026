@@ -2,8 +2,6 @@
 
 A hierarchical query walks a table that refers to itself, such as an org chart, a bill of materials or, in the lab schema, a lot genealogy where a split or rework lot points to the lot it came from. This page covers Oracle's CONNECT BY syntax: START WITH, PRIOR, LEVEL, ORDER SIBLINGS BY, SYS_CONNECT_BY_PATH, CONNECT_BY_ROOT, CONNECT_BY_ISLEAF, walking up instead of down, and how to handle data that loops.
 
-Slides: 30 of the Day 1 deck.
-
 ## The lot genealogy in FAB_LAB
 
 In the invented fab, a production lot can be split into smaller lots (for an experiment, or to hold back suspect wafers), and a held lot can be reworked into a new lot. Each child lot stores its parent in `lots.parent_lot_id`; production lots have no parent, so the column is NULL for them.
@@ -18,6 +16,14 @@ L26-007 (PROD)
 ```
 
 The other production lots have no children. The data is illustrative.
+
+```mermaid
+flowchart TD
+    A["L26-003"] --> B["L26-003A"]
+    A --> C["L26-003B"]
+    C --> D["L26-003B1"]
+    E["L26-007"] --> F["L26-007A"]
+```
 
 If it helps, read this as a family tree in which every child has exactly one parent. L26-003 is the grandparent, L26-003A and L26-003B are siblings, and L26-003B1 is the grandchild. The vocabulary on the rest of this page (root, parent, child, sibling, leaf) comes straight from that picture.
 
@@ -87,6 +93,11 @@ The same applies to GROUP BY: in a hierarchical query, sort siblings with ORDER 
 ### WHERE filters rows, CONNECT BY prunes branches
 
 Oracle evaluates a hierarchical query in this order: joins first, then the CONNECT BY walk, then the remaining WHERE conditions. A WHERE condition removes individual rows from the finished tree. It does not remove their children:
+
+```mermaid
+flowchart LR
+    J["Joins"] --> CB["START WITH and CONNECT BY walk<br/>prunes branches"] --> W["WHERE<br/>removes single rows"] --> O["ORDER SIBLINGS BY"]
+```
 
 ```sql
 SELECT LEVEL AS lvl, LPAD(' ', 2 * (LEVEL - 1)) || lot_id AS lot_tree, status

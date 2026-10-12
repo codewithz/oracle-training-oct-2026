@@ -2,8 +2,6 @@
 
 Analytic functions compute a value for each row from a group of related rows (its "window") without collapsing the rows the way GROUP BY does. This page explains the OVER clause with PARTITION BY, ORDER BY and the windowing clause, then works through ranking and top-N per group, comparing rows with LAG and LEAD, running totals, moving averages, and the distribution functions RATIO_TO_REPORT, NTILE and PERCENT_RANK. It also explains why you cannot use an analytic function in WHERE.
 
-Slides: 26 to 28 of the Day 1 deck.
-
 ## Keep every row, add a computed column
 
 GROUP BY collapses each group into one row. The average SPLIT defect count of lot L26-007 is one number:
@@ -70,6 +68,13 @@ Analytic functions are the last thing Oracle computes in a query, apart from the
 - The window only ever contains rows that passed WHERE. In the query above, the lot average is the average of SPLIT readings only, because WHERE kept only SPLIT rows.
 - An analytic function can appear only in the select list or in the ORDER BY clause. If you put one in WHERE, you get ORA-30483.
 - You can apply an analytic function to the result of GROUP BY, for example `SUM(COUNT(*)) OVER (...)` or `RATIO_TO_REPORT(COUNT(*)) OVER (...)`.
+
+Order of evaluation:
+
+```mermaid
+flowchart LR
+    A["FROM and JOIN"] --> B["WHERE"] --> C["GROUP BY"] --> D["HAVING"] --> E["Analytic functions<br/>OVER (...)"] --> F["SELECT list"] --> G["ORDER BY"]
+```
 
 ```sql
 SELECT tool_id, wafer_id, defect_count

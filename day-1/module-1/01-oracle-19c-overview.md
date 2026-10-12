@@ -2,8 +2,6 @@
 
 This page places Oracle Database 19c in Oracle's release history, explains why so many production systems run it, and describes the editions you may meet. It ends with the 19c features this course touches and one that it does not.
 
-Slides: 5 and 6 of the Day 1 deck.
-
 ## What this module covers
 
 Module 1 is about the database server itself: what 19c is, how a 19c database is laid out (container and pluggable databases), how it is installed and configured, how clients reach it, and what happens inside the instance when you run SQL. The rest of the course builds on this. You cannot write good PL/SQL, or tune a slow query, without a picture of what the instance does with the code you send it.
@@ -27,6 +25,14 @@ Up to 12c, Oracle versions had numbers such as 11.2.0.4 and 12.2.0.1. Year-named
 | 12.2.0.1 | Last release with the old numbering |
 | 18c | First year-named release |
 | 19c | Final release of the 12.2 family |
+
+```mermaid
+timeline
+    title Path to 19c
+    12.2.0.1 : Last release with the old numbering
+    18c : First year-named release
+    19c : Long-term support release of the 12.2 family
+```
 
 19c is the **long-term support release** of that family: the release Oracle supports for many years, longer than the releases around it. That is why teams standardise on it, and why most of the Oracle systems you will meet in production today run 19c. A fab treats a qualified process recipe the same way: once it has been qualified, nobody wants to requalify it every year, so it stays in use for a long time. The newer long-term release is 23ai. Everything taught on Days 1 to 3 of this course works on both.
 

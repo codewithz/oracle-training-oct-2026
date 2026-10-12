@@ -2,8 +2,6 @@
 
 This page reviews the SQL you already write every day and concentrates on the places where it goes wrong in production: outer joins combined with COUNT, NOT IN against a column that can hold NULL, the difference between UNION and UNION ALL, and Oracle's habit of storing an empty string as NULL. It ends with the row limiting clause (FETCH FIRST). All examples run as FAB_LAB against the invented wafer-fab tables you loaded in Lab 1.
 
-Slides: 20, 22 and 23 of the Day 1 deck.
-
 ## The FAB_LAB tables
 
 The lab schema is a small, invented wafer fab. Product names and numbers are illustrative.

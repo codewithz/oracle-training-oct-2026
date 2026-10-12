@@ -2,8 +2,6 @@
 
 This page covers transactions from the point of view of someone writing SQL: when a change becomes permanent, how to undo all or part of it, why a DDL statement in the middle of a script commits your earlier work, and what other sessions see while your transaction is still open. The internals (redo, undo and LGWR) are on the Module 1 page [COMMIT, redo and undo](../module-1/10-commit-redo-and-undo.md).
 
-Slides: 24 of the Day 1 deck.
-
 ## What a transaction is
 
 A **transaction** is a unit of work made of one or more DML statements (INSERT, UPDATE, DELETE, MERGE) that succeed or fail together. In Oracle you never type BEGIN TRANSACTION. The first DML statement after the previous transaction ended starts a new one, and the transaction ends when one of these happens:
@@ -13,6 +11,19 @@ A **transaction** is a unit of work made of one or more DML statements (INSERT, 
 - you disconnect. A normal exit from most Oracle tools commits, but this behaviour depends on the tool and can be configured (in SQL*Plus, `SET EXITCOMMIT OFF` makes EXIT roll back instead). If the client process ends abnormally, Oracle rolls the transaction back.
 
 Until the transaction commits, nothing it changed is permanent and no other session can see the changes. Your own session sees them straight away.
+
+```mermaid
+stateDiagram-v2
+    [*] --> NoTransaction
+    NoTransaction --> Open : first INSERT, UPDATE, DELETE or MERGE
+    Open --> Open : more DML
+    Open --> Open : SAVEPOINT / ROLLBACK TO SAVEPOINT
+    Open --> NoTransaction : COMMIT
+    Open --> NoTransaction : ROLLBACK
+    Open --> NoTransaction : DDL (implicit COMMIT)
+    NoTransaction : No open transaction
+    Open : Transaction open
+```
 
 Each single statement is also atomic. If one UPDATE fails halfway (for example on a constraint violation in the 900th row), Oracle rolls back the whole statement, but the earlier statements in your transaction stay as they were. This is called statement-level rollback.
 

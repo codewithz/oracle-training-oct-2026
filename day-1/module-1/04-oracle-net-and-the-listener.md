@@ -2,8 +2,6 @@
 
 This page explains how a client such as SQL Developer finds and connects to your database: the listener, database services, the difference between a service name and a SID, the two ways of writing a connect string (EZConnect and `tnsnames.ora`), how to read `lsnrctl status`, and what the common ORA-125xx connection errors mean.
 
-Slides: 9 of the Day 1 deck.
-
 ## How a connection is made
 
 Your client never opens a database file. It sends a connection request over the network to a process called the **listener**, and asks for a **service** by name. The listener knows which instance offers that service, hands the connection over to a server process for that instance, and then steps out of the way. From then on your session talks to its server process directly. Stopping the listener does not disconnect sessions that are already connected; it only stops new ones.
@@ -18,6 +16,23 @@ The pieces involved are:
 | Service | A logical name for a database or part of one. Clients ask for a service, not for a file or an instance |
 | Service registration | The instance's LREG background process tells the listener which services it offers, without any entry in `listener.ora` |
 | Connect string | What the client gives: host, port and service name, written in EZConnect form or as a `tnsnames.ora` alias |
+
+The steps of a connection, in order:
+
+```mermaid
+sequenceDiagram
+    participant C as Client (SQL Developer)
+    participant L as Listener (port 1521)
+    participant I as Instance
+    participant S as Server process
+    I->>L: LREG registers services (orcl, orclpdb)
+    C->>L: Connect request for service orclpdb
+    L->>S: Hand the connection to a server process
+    S-->>C: Session established
+    Note over L: Listener steps out of the way
+    C->>S: SQL statements, directly
+    S-->>C: Results
+```
 
 Because registration is dynamic, the listener only knows a service while the instance is running and has registered it. That explains several of the errors further down.
 

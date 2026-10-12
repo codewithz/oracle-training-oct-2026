@@ -2,8 +2,6 @@
 
 This page explains the difference between an Oracle instance and an Oracle database, which people mix up all the time, and walks through the stages an instance goes through at startup: NOMOUNT, MOUNT and OPEN. It ends with the rule that one instance opens one database, and the one exception, Oracle RAC.
 
-Slides: 12 of the Day 1 deck.
-
 ## Two words, two things
 
 In everyday speech "the database" means the whole Oracle system. Oracle's own terminology is more precise, and the rest of this course uses it.
@@ -29,6 +27,20 @@ Several other files live alongside these and belong to the system without being 
 | Lives in | Memory | Disk |
 | Exists | From STARTUP to SHUTDOWN | Until someone deletes the files |
 | Identified by | The SID, for example ORCL | The database name, for example ORCL |
+
+```mermaid
+flowchart LR
+    subgraph INSTANCE["Instance (memory)"]
+        SGA["SGA"]
+        BG["Background processes<br/>DBWn, LGWR, CKPT, SMON, PMON"]
+    end
+    subgraph DATABASE["Database (disk)"]
+        DF["Data files"]
+        CF["Control files"]
+        RL["Online redo logs"]
+    end
+    INSTANCE -- "mounts and opens" --> DATABASE
+```
 
 Because an instance lives in memory and a database is files, either can exist without the other: an instance can run without having opened a database yet (that is what NOMOUNT means, below), and a database's files sit on disk while no instance is running.
 
@@ -82,6 +94,15 @@ The data file count covers every container: the root, the seed and the PDB each 
 ## Startup: NOMOUNT, MOUNT, OPEN
 
 A plain `STARTUP` command takes the instance through three stages. You can also stop at each one, which DBAs do for maintenance and recovery. In library terms: the staff arrive and switch on the lights (NOMOUNT), someone opens the catalogue that says where every book is shelved (MOUNT), and then the doors open to readers (OPEN).
+
+```mermaid
+stateDiagram-v2
+    [*] --> SHUTDOWN
+    SHUTDOWN --> NOMOUNT : read spfile, allocate SGA, start processes
+    NOMOUNT --> MOUNT : read control files
+    MOUNT --> OPEN : open data files and redo logs
+    OPEN --> SHUTDOWN : SHUTDOWN IMMEDIATE
+```
 
 ```sql
 STARTUP NOMOUNT;        -- stage 1: start the instance only

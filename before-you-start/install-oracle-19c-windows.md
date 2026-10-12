@@ -2,7 +2,7 @@
 
 Every participant works on their own Oracle Database 19c, installed on their own Windows 10 or Windows 11 machine. This page takes you from an empty machine to a running container database with one pluggable database (PDB), SQL Developer installed, and two working connections. Do it before Day 1. Most of the time goes on downloading the software and waiting while the installer creates the database.
 
-Slides: 4 of the Day 1 deck (the lab environment). The installation itself is explained on [Installing Oracle 19c](../day-1/module-1/03-installing-oracle-19c.md).
+The installation itself is explained on [Installing Oracle 19c](../day-1/module-1/03-installing-oracle-19c.md).
 
 The steps follow Oracle's [Database Installation Guide, 19c for Microsoft Windows](https://docs.oracle.com/en/database/oracle/oracle-database/19/ntdbi/index.html). If a screen on your machine looks different from what is described here, the installation guide is the reference.
 
@@ -18,6 +18,21 @@ The steps follow Oracle's [Database Installation Guide, 19c for Microsoft Window
 | PDB state | Open in READ WRITE mode, and saved so it opens again after a reboot |
 
 The lab user FAB_LAB is not created here. You create it in [Lab 1](../day-1/labs/lab-1-connect-and-configure.md) on Day 1.
+
+The steps below, in order:
+
+```mermaid
+flowchart TD
+    S1["1. Check your machine"] --> S2["2. Download the 19c zip"]
+    S2 --> S3["3. Extract the zip into the Oracle home"]
+    S3 --> S4["4. Run setup.exe<br/>(DBCA creates the CDB and PDB)"]
+    S4 --> S5["5. Check the Windows services"]
+    S5 --> S6["6. Read service names with lsnrctl status"]
+    S6 --> S7["7. Install SQL Developer"]
+    S7 --> S8["8. Connect as SYSTEM to the root and the PDB"]
+    S8 --> S9["9. Open the PDB and save its state"]
+    S9 --> Done(["Ready for Day 1"])
+```
 
 ## 1. Check your machine
 

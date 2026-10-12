@@ -2,8 +2,6 @@
 
 This page covers the two settings to get right after every install. The first is how initialization parameters work: where they are stored (spfile or pfile), how to read them from `V$PARAMETER`, and how `ALTER SYSTEM ... SCOPE` decides whether a change is temporary or permanent. The second is saving the open state of your PDB so that it opens by itself after a restart.
 
-Slides: 10 of the Day 1 deck.
-
 ## Initialization parameters
 
 An Oracle instance is configured by **initialization parameters**: a few hundred named settings that the instance reads when it starts. They decide, among other things, how much memory the instance uses (`sga_target`, `pga_aggregate_target`), where the control files are (`control_files`), how many processes may connect (`processes`), the database block size (`db_block_size`) and default formats for sessions (`nls_date_format`).
@@ -74,6 +72,17 @@ The instance reads its parameters from a **parameter file** at startup. There ar
 
 At startup the instance looks, in its default location, for `spfile<SID>.ora`, then `spfile.ora`, then `init<SID>.ora`, and uses the first one it finds. On Windows the default location is `%ORACLE_HOME%\database`. To see which spfile your instance used:
 
+```mermaid
+flowchart LR
+    S["STARTUP"] --> A{"spfile&lt;SID&gt;.ora exists?"}
+    A -->|yes| U["Use it"]
+    A -->|no| B{"spfile.ora exists?"}
+    B -->|yes| U
+    B -->|no| C{"init&lt;SID&gt;.ora exists?"}
+    C -->|yes| P["Use the pfile"]
+    C -->|no| E["Startup fails"]
+```
+
 ```sql
 SHOW PARAMETER spfile
 ```
@@ -104,6 +113,14 @@ Run these as a user with the SYSDBA privilege (for example SYS). The second stat
 | `MEMORY` | The running instance only | Now | Lost |
 | `SPFILE` | The spfile only | At the next restart | Kept |
 | `BOTH` | The running instance and the spfile | Now | Kept |
+
+```mermaid
+flowchart LR
+    CMD["ALTER SYSTEM SET ..."] --> Q{SCOPE?}
+    Q -->|MEMORY| MEM["Running instance only<br/>Lost at restart"]
+    Q -->|SPFILE| SP["spfile only<br/>Used at next restart"]
+    Q -->|BOTH| BOTH["Running instance and spfile<br/>Effective now, kept"]
+```
 
 `MEMORY` is a sticky note on the tool's screen: it works for this shift and is gone after a restart. `SPFILE` edits the written recipe, so the next start uses it, but nothing changes on the running tool. `BOTH` does the two at once.
 

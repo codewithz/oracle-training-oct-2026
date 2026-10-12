@@ -2,8 +2,6 @@
 
 In this lab you use analytic functions on the FAB_LAB measurements: ranking with ties, the top row per group, comparing a row with an average or with the previous row, running totals, moving averages and distribution. The questions are B1 to B7. Each one replaces something that would otherwise take a self-join, a second query or a loop.
 
-Slides: 28 of the Day 1 deck.
-
 | | |
 | --- | --- |
 | Time | 30 minutes |

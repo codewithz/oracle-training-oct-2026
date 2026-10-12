@@ -2,8 +2,6 @@
 
 This page explains how Oracle stores data. On the logical side, tables and indexes are segments made of extents, which are made of blocks, and segments live in tablespaces. On the physical side, tablespaces are stored in data files, and the database also needs control files and online redo log files, plus archived redo logs in ARCHIVELOG mode. You see each of these through the data dictionary and V$ views such as `V$DATAFILE`, `V$LOG` and `V$CONTROLFILE`.
 
-Slides: 15 of the Day 1 deck.
-
 ## Logical and physical structures
 
 Oracle separates how data is organized from where it is stored.
@@ -21,6 +19,14 @@ Tablespace (USERS)          stored in    Data file(s)  users01.dbf
   Segment (table LOTS)
     Extent (contiguous blocks)           An extent lies in one data file
       Block (8 KB)                       A block maps to bytes on disk
+```
+
+```mermaid
+flowchart TB
+    TS["Tablespace USERS"] --> SEG["Segment: table LOTS"]
+    SEG --> EXT["Extent: contiguous blocks"]
+    EXT --> BLK["Block: 8 KB"]
+    TS -. "stored in" .-> DF[("Data file users01.dbf")]
 ```
 
 ## The logical hierarchy
@@ -207,6 +213,15 @@ The `STATUS` values you meet most often are:
 | ACTIVE | Not current, but still needed for instance recovery |
 | INACTIVE | No longer needed for instance recovery (it may still be needed for media recovery) |
 | UNUSED | Never written to, for example a newly added group |
+
+With two groups, LGWR switches back and forth like this:
+
+```mermaid
+flowchart LR
+    G1["Group 1<br/>CURRENT"] -- "log switch" --> G2["Group 2<br/>CURRENT"]
+    G2 -- "log switch" --> G1
+    G1 -. "when full: checkpoint, then archive in ARCHIVELOG mode" .-> R["Group can be reused"]
+```
 
 A filled group can be reused only when it is no longer needed: after DBWn has written the changes it protects to the data files (a checkpoint), and, in ARCHIVELOG mode, after ARCn has archived it.
 

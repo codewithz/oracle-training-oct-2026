@@ -2,8 +2,6 @@
 
 In this lab you write joins, subqueries, set operator queries and a small transaction against FAB_LAB, the invented wafer-fab schema you loaded in Lab 1. The questions are A1 to A7. Several of them are built around a trap that gives wrong numbers in real reports, so read the checkpoints carefully: a query that runs is not always a query that is right.
 
-Slides: 24 of the Day 1 deck.
-
 | | |
 | --- | --- |
 | Time | 25 minutes |
@@ -42,6 +40,14 @@ PRODUCTS 1---n LOTS 1---n WAFERS 1---n MEASUREMENTS n---1 TOOLS
 ```
 
 Lot and wafer IDs are readable: wafer `L26-003-02` is slot 2 of lot `L26-003`. Lot `L26-003B` is a split of `L26-003`, and `L26-003B1` is a rework of `L26-003B`. `target_thk_nm` is the product's target thickness in nanometres; `thickness_nm` is the thickness measured on a wafer at a process step.
+
+```mermaid
+erDiagram
+    PRODUCTS ||--o{ LOTS : has
+    LOTS ||--o{ WAFERS : has
+    WAFERS ||--o{ MEASUREMENTS : has
+    TOOLS ||--o{ MEASUREMENTS : takes
+```
 
 ## How to work
 

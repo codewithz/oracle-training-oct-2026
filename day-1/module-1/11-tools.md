@@ -2,8 +2,6 @@
 
 This page describes the tools you use to work with Oracle Database 19c and when to pick each one: SQL*Plus and SQLcl on the command line, SQL Developer as the graphical tool for daily work, Enterprise Manager Database Express and Cloud Control in the browser, and the utilities that create databases and control the listener.
 
-Slides: 17 of the Day 1 deck.
-
 ## Overview
 
 | Tool | Use it for |
