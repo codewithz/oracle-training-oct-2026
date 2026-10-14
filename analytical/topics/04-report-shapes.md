@@ -16,33 +16,42 @@ Watch the animated page first: [Report shapes, animated](../tutorials/04-report-
 
 A plain `GROUP BY` gives Maya one line per product and lot type. She wanted more: a total under each product, a total for the whole fab, a grid she can read across, and the lot IDs written out. Without the report clauses she would run one query per level and stitch them together with `UNION ALL`, or paste the result into a spreadsheet. Doing it outside the query makes the numbers hard to check. The report clauses build the totals in the same pass over the data as the detail, so subtotals always agree with the lines above them.
 
-## The analogy: the night manager's room sheet
+## The analogy: a fruit stall's sales sheet
 
-Dana is the night manager at the Harbour Hotel. After the last check-in she tallies the rooms occupied by floor and room type. Floor 1 has 4 singles and 6 doubles, floor 2 has 3 singles, 5 doubles and 2 suites, floor 3 has 3 suites. Six lines: that is the plain `GROUP BY` result. The owner asks for four versions of the same sheet.
+At the end of the weekend a fruit stall counts how many pieces of each fruit it sold each day. A plain count gives one line per day and fruit that sold. That is `GROUP BY`.
 
-1. Subtotals. "Add a line after each floor and a grand total." Dana works from the right: she rolls the room type up, then the floor. This is `ROLLUP`. Ten lines: six details, three floor subtotals, one grand total of 23.
-2. Totals both ways. "Also the total of singles, doubles and suites." That is `CUBE`: every combination. Thirteen lines.
-3. A grid. "Floors down the page, types across." Dana must write the column headings first. A penthouse checked in tomorrow has no column until she adds one. Empty combinations get 0. This is `PIVOT`.
-4. A list. "Which rooms are suites, one line per floor?" She writes the room numbers in order, separated by commas. This is `LISTAGG`.
-
-| Floor | Type | Rooms |
+| Day | Fruit | Sold |
 |---|---|---|
-| 1 | Single | 4 |
-| 1 | Double | 6 |
-| 1 | all types | 10 |
-| 2 | Single | 3 |
-| 2 | Double | 5 |
-| 2 | Suite | 2 |
-| 2 | all types | 10 |
-| 3 | Suite | 3 |
-| 3 | all types | 3 |
-| all floors | all types | 23 |
+| Sat | Apples | 4 |
+| Sat | Pears | 6 |
+| Sun | Apples | 3 |
+| Sun | Pears | 5 |
+| Sun | Plums | 2 |
 
-**Where the analogy breaks.**
+The owner then asks for four other shapes.
 
-- Dana writes "all types" in words. Oracle writes NULL in the rolled-up column, and a real room with no type would also show NULL. You need `GROUPING()` to tell them apart.
-- Dana adds a penthouse column in ten seconds. A `PIVOT` column list is part of the query text. Values you forget are left out without a warning.
-- Dana can carry a long list to a second page. A `LISTAGG` string cannot pass 4000 bytes, and by default Oracle raises `ORA-01489`.
+- Subtotals: "a line after each day and a grand total at the bottom". That is `ROLLUP`.
+
+| Day | Fruit | Sold |
+|---|---|---|
+| Sat | Apples | 4 |
+| Sat | Pears | 6 |
+| Sat | all fruit | 10 |
+| Sun | Apples | 3 |
+| Sun | Pears | 5 |
+| Sun | Plums | 2 |
+| Sun | all fruit | 10 |
+| all days | all fruit | 20 |
+
+- Totals both ways: "also the total for each fruit over the weekend" (apples 7, pears 11, plums 2). That is `CUBE`.
+- A grid: days down the side, fruit across the top, one number per box. That is `PIVOT`. You write the column headings first. A fruit not on your list gets no column.
+- A list: "which days did each fruit sell?" One line per fruit, with the days joined into one cell: Apples: Sat, Sun. That is `LISTAGG`.
+
+**Where the picture breaks.**
+
+- On paper you write "all fruit" on a subtotal line. Oracle puts NULL in that column. A real row with no fruit recorded also shows NULL, so you use `GROUPING()` to tell them apart.
+- In `PIVOT` the column list is part of the query text, and a value you forget is left out without a warning.
+- A `LISTAGG` cell is limited to 4000 bytes. Beyond that Oracle raises `ORA-01489`.
 
 ## What Oracle actually does
 
@@ -53,14 +62,14 @@ Dana is the night manager at the Harbour Hotel. After the last check-in she tall
 5. `LISTAGG` is an ordinary aggregate for text. Oracle sorts each group by `WITHIN GROUP (ORDER BY ...)`, joins the values with your separator and skips NULLs. Past 4000 bytes it fails with `ORA-01489` unless you write `ON OVERFLOW TRUNCATE`.
 6. Rows come back in no promised order, so add an `ORDER BY` if subtotals must sit under their groups.
 
-| In Oracle | At the Harbour Hotel |
+| In Oracle | At the fruit stall |
 |---|---|
-| `ROLLUP(a, b)` | floor subtotals and a grand total |
-| `CUBE(a, b)` | also the totals by room type |
-| NULL in a rolled-up column | "all types" written on the line |
+| `ROLLUP(a, b)` | a subtotal for each day and a grand total |
+| `CUBE(a, b)` | also the total for each fruit |
+| NULL in a rolled-up column | "all fruit" written on the line |
 | `GROUPING(col)` | asking "is this a total line?" |
-| `PIVOT ... FOR col IN (...)` | the grid, headings written first |
-| `LISTAGG` | room numbers on one line |
+| `PIVOT ... FOR col IN (...)` | the grid, with the headings written first |
+| `LISTAGG` | the days joined into one cell |
 
 ## The tables you will use
 

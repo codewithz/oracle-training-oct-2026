@@ -19,28 +19,27 @@ Want to see it move first? Open the animated page: [05-trees.html](../tutorials/
 
 Lot L26-003B1 is on hold and Maya asks two things. Where did it come from? And if its source lot is bad, which other lots came from the same source? The first needs the parent, then the parent's parent, up to the original lot. The second needs the children, then their children, down to the last one. A join finds one step. Join `lots` to itself twice and you see grandparents, but nobody knows how many generations a family has, and a fixed number of joins either misses deep lots or has more joins than needed. A hierarchical query repeats the single step for as many generations as there are.
 
-## The analogy: the baker's sourdough jars
+## The analogy: a family tree
 
-Ines runs a bakery with a sourdough starter. Whenever she splits off a portion of starter, a new jar is created, and she writes an index card: the new jar's name and which jar it was split from. The original jar has nothing in "split from". The cards live in a drawer in no particular order.
+Imagine a family written down as a list. Each person has one line that says only who their parent is. Gran has no parent. The lines are in no particular order.
 
-| Jar | Split from | Now |
+| Person | Parent | Lives |
 |---|---|---|
-| Uma | Sam | going strong |
-| Mother | nothing | going strong |
-| Sam | Mother | gone off |
-| Tom | Mother | given away |
+| Cousin | Uncle | at home |
+| Gran | nobody | at home |
+| Uncle | Gran | abroad |
+| Mum | Gran | at home |
 
-The drawer says only who each jar came from. There is no card saying "Mother has children Tom and Sam". To find children Ines has to search the drawer for cards whose "split from" matches. That single search is the one step a hierarchical query repeats.
+The list never says "Gran has children Mum and Uncle". To find someone's children you must search the list for lines whose parent is that person. A hierarchical query repeats that one search over and over.
 
-1. "A batch from Mother was contaminated: which jars came from her?" Walking down. Ines pulls Mother's card, searches for cards split from Mother (Tom and Sam), takes Tom first and finds nobody split from Tom, then Sam, and finds Uma. She stops because a search found nothing new. Generations: Mother 1, Tom 2, Sam 2, Uma 3. She finished Tom's branch before Sam's: that is the order the rows come out.
-2. "Uma's jar smells off: where did it come from?" Walking up. Uma's card says Sam, Sam's says Mother, Mother's box is empty. The answer is Uma, Sam, Mother, counting generations from where she started.
-3. "List Mother's jars, but not the ones that have gone off." If she writes the whole family out and then crosses off Sam, Uma is still on the list. If she refuses to pick up any jar that has gone off while searching, she never opens Sam's card and never finds Uma. The first is `WHERE`, the second is a condition in `CONNECT BY`.
+- Walking down: "who comes from Gran?" Start at Gran, find her children (Mum, Uncle), then their children (Cousin), and stop when a search finds nobody new. Counting generations: Gran 1, Mum 2, Uncle 2, Cousin 3. This is `CONNECT BY PRIOR id = parent`.
+- Walking up: "where does Cousin come from?" Start at Cousin, read the parent (Uncle), then Uncle's parent (Gran), and stop when the parent is blank. Same clause, sides swapped.
+- Leaving someone out: "list Gran's family, but not people living abroad". If you write the whole family first and cross out Uncle, Cousin is still on the list. If you refuse to step onto Uncle while searching, you never find Cousin. The first is `WHERE`, the second is a condition inside `CONNECT BY`.
 
-**Where the analogy breaks.**
+**Where the picture breaks.**
 
-- Ines would notice a card that points back into the family. Oracle does not until it walks into the loop, and then stops with `ORA-01436`. `NOCYCLE` makes it skip the repeated row.
-- Each card has one "split from" box, so every jar has at most one parent. A real family has two parents, which makes a net. `CONNECT BY` relies on one parent per row.
-- Ines searches the drawer at each step. So does Oracle, so an index on `parent_lot_id` keeps the walk fast.
+- You would notice at once if the list said Gran's parent is Cousin. Oracle only notices when it walks into the loop, and then stops with `ORA-01436`. `NOCYCLE` makes it skip the repeated row.
+- Each line has one parent box, so this is a tree and not a real family. A lot made by merging two lots cannot be stored in one `parent_lot_id`.
 
 ## What Oracle actually does
 
@@ -54,15 +53,15 @@ The drawer says only who each jar came from. There is no card saying "Mother has
 
 The recursive `WITH` reaches the same rows differently: it runs the anchor once, then runs the recursive query on what the previous round found, one generation at a time, until a round finds nothing. That is breadth first.
 
-| In Oracle | In the bakery |
+| In Oracle | In the family list |
 |---|---|
-| `parent_lot_id` | the "split from" box |
-| `START WITH` | pulling the first card |
-| `CONNECT BY PRIOR lot_id = parent_lot_id` | search for cards split from the one I hold (down) |
-| `CONNECT BY lot_id = PRIOR parent_lot_id` | pull the card named in "split from" (up) |
+| `parent_lot_id` | the "Parent" column |
+| `START WITH` | the person you start from |
+| `CONNECT BY PRIOR lot_id = parent_lot_id` | find the children of the person I am on (down) |
+| `CONNECT BY lot_id = PRIOR parent_lot_id` | go to the person named as my parent (up) |
 | `LEVEL` | the generation |
 | `WHERE` on a hierarchical query | crossing a name off the finished list |
-| condition inside `CONNECT BY` | refusing to pick up a card |
+| condition inside `CONNECT BY` | refusing to step onto that person |
 
 The picture below follows the lots and the sessions.
 

@@ -19,41 +19,37 @@ You need the Day 3 add-on tables for the last part. Lab 8 loads them.
 
 Maya's next four questions all depend on order. How many defects have we collected so far, wafer by wafer? What is the average of the last three wafers? How much did this wafer change from the one before? How long did lot L26-003 sit on hold? Topic 01 gave every row a pile to look at, but a pile has no order inside it. "So far", "the last three" and "the one before" only mean something once the rows stand in a line. The word that puts them in a line is `ORDER BY` inside `OVER`.
 
-## The analogy: a night guard's logbook
+## The analogy: a bank statement
 
-Mo is the night guard at a warehouse. Every round he writes a line in the logbook: the round number and how many doors he found unlocked. The book is in time order and everything he does with it depends on that order. The five rounds read 4, 0, 0, 6 and 1.
+A bank statement lists your spending in date order. Because the lines are in order, it can answer questions that a heap of receipts cannot.
 
-1. Mo keeps a tally in the margin, "unlocked so far": this line plus everything above it. It reads 4, 4, 4, 10, 11. This is the running total.
-2. He lays a card over the book that shows the current line and the two above it, and slides it down. He averages what he sees through the card. The first line shows one entry, the second two, and from the third on three: 4, 2, 1.33, 2, 2.33. This is the moving average.
-3. For "what changed since last round?" he puts a finger on the line above and subtracts. The first line has nothing above, and blank minus anything is blank: blank, -4, 0, 6, -5. The finger above is `LAG`. A finger on the line below is `LEAD`.
-4. If the pages were shuffled, all of this would be nonsense. "So far" needs an order.
-
-| Round | Doors | Tally | Last 3 | Above | Change |
+| Day | Spent | Total so far | Average of last 3 days | Day before | Change |
 |---|---|---|---|---|---|
-| 1 | 4 | 4 | 4 | blank | blank |
-| 2 | 0 | 4 | 2 | 4 | -4 |
-| 3 | 0 | 4 | 1.33 | 0 | 0 |
-| 4 | 6 | 10 | 2 | 0 | 6 |
-| 5 | 1 | 11 | 2.33 | 6 | -5 |
+| Mon | 30 | 30 | 30 | blank | blank |
+| Tue | 60 | 90 | 45 | 30 | 30 |
+| Wed | 90 | 180 | 60 | 60 | 30 |
+| Thu | 30 | 210 | 60 | 90 | -60 |
+| Fri | 60 | 270 | 60 | 30 | 30 |
 
-The fourth question, time on hold, is the back door log. Mo records each time the door is opened or shut, but nothing on a line says how long it stayed open. You get that from the line below: the next entry's time minus this one's.
+- Total so far is a running total: this line plus every line above it. `SUM(...) OVER (ORDER BY day)`.
+- Average of the last 3 days uses only this line and the two above it. The group of lines moves down with you. That group is the frame.
+- Day before looks at the line above. That is `LAG`. Looking at the line below is `LEAD`. On Monday there is no line above, so the answer is blank (NULL).
 
-| Time | Entry | Minutes to next entry |
+One more use. A bus timetable lists when each bus arrives, but not the gap between buses. You get the gap by looking at the next line and subtracting.
+
+| Bus | Arrives | Minutes until the next bus |
 |---|---|---|
-| 18:00 | OPEN | 20 |
-| 18:20 | SHUT | 110 |
-| 20:10 | OPEN | 15 |
-| 20:25 | SHUT | 75 |
-| 21:40 | OPEN | 50 |
-| 22:30 | SHUT | blank |
+| 1 | 08:00 | 20 |
+| 2 | 08:20 | 30 |
+| 3 | 08:50 | blank |
 
-The door was open for the OPEN rows: 20 + 15 + 50 = 85 minutes. If Mo first crossed out every SHUT line and then looked for the next entry, the next entry after 18:00 would be 20:10 and he would measure 130 minutes, the time from one opening to the next. The order of the steps matters.
+Shuffle the statement lines and every column becomes nonsense. "So far" and "the line above" only mean something when the order is fixed.
 
-**Where the analogy breaks.**
+**Where the picture breaks.**
 
-- Mo's card shows a fixed number of lines. Oracle's default frame, when you write `ORDER BY` and no frame, runs from the top to the current row and also takes in every row that ties with the current row in the sort column. With ties the "so far" jumps.
-- The book is in time order because the pages were bound that way. Oracle sorts by whatever you write in `OVER`. `ORDER BY wafer_id` gives a tally in wafer order.
-- Mo strikes out lines with a pen. If `WHERE` removes rows, `LAG` and `LEAD` reach to whoever is next in the reduced list.
+- If two rows tie in the sort column, Oracle's default frame takes in both at once, so "so far" jumps instead of growing one line at a time.
+- The order is the one you write in `ORDER BY` inside `OVER`, not the order the rows happen to be stored in.
+- If `WHERE` removes a row first, the neighbours change. Cancel bus 2 before looking and the gap after bus 1 becomes 50 minutes.
 
 ## What Oracle actually does
 
@@ -64,14 +60,14 @@ The door was open for the OPEN rows: 20 + 15 + 50 = 85 minutes. If Mo first cros
 5. `LAG(x, n, default)` and `LEAD(x, n, default)` use no frame. They step n rows back or forward in the sorted list (1 if omitted) and return that row's value, or the default, or NULL if the step falls off the partition.
 6. Attach the answers as new columns. No rows are lost. Filtering on them needs an inner query.
 
-| In Oracle | In the logbook |
+| In Oracle | On the statement |
 |---|---|
-| `ORDER BY` inside `OVER` | the order the lines were written |
-| `SUM(x) OVER (ORDER BY t)` | the tally in the margin |
-| `ROWS BETWEEN 2 PRECEDING AND CURRENT ROW` | the card over three lines |
-| `LAG(x)` / `LEAD(x)` | the finger on the line above / below |
-| `LEAD(t) - t` | time of the next entry minus this one |
-| inline view, then filter | measure first, strike out after |
+| `ORDER BY` inside `OVER` | the date order of the lines |
+| `SUM(x) OVER (ORDER BY t)` | total so far |
+| `ROWS BETWEEN 2 PRECEDING AND CURRENT ROW` | average of the last 3 days |
+| `LAG(x)` / `LEAD(x)` | the line above / below |
+| `LEAD(t) - t` | next bus time minus this one |
+| inline view, then filter | work out the gaps first, then pick the lines you want |
 
 ## Step 1: LAG and LEAD
 

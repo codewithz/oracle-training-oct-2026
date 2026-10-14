@@ -19,31 +19,27 @@ The pencil, ink and `COMMIT` ideas are in [Creating tables and changing data](..
 
 Maya starts a report that reads thousands of rows and takes a few minutes. In the middle of it a colleague changes a row she has not reached yet and commits. What should the report show for that row? If it shows the new value, the report mixes data from two moments and its totals may not add up. If it waits for the colleague, one slow update could stop every report in the building. Oracle's answer is neither. The report shows the data as it was when it started, and it never waits. That raises three practical questions: how can the report still see old data after someone has changed it, how far back can you look on purpose, and when do you actually want other sessions to wait?
 
-## The analogy: the lot bulletin printed on request
+## The analogy: a photograph
 
-The fab's lot bulletin is printed fresh each time someone asks. It lists every lot with its priority. The master list is kept by an editor, Ben, in a document others can edit.
+When you press Enter on a `SELECT`, Oracle takes a photograph of the data at that moment. You read the photograph. If someone changes the real table while you are reading, your photograph does not change.
 
-1. At 9:00:00 Maya asks for a bulletin. The printing room notes the time. The bulletin shows the master list as it stood then: L26-001 has priority 3.
-2. At 9:00:10 Ben changes L26-001 to 9. This is a draft. The printing room ignores drafts. Maya's bulletin is not held up and still says 3.
-3. At 9:00:20 Ben approves the change. This is the commit. Maya is still on page 12 and has not reached L26-001. When the change was approved the printing room kept the old line on a correction slip, and when her bulletin reaches L26-001 it puts the slip back. Her bulletin is consistent: every line is as of 9:00:00.
-4. At 9:00:40 Maya asks for another bulletin. It is stamped 9:00:40 and says 9. Each request is its own printing.
-5. "Print it as it was ten minutes ago." The room rebuilds the old page from its correction slips. That works while the slips exist. The room keeps them fifteen minutes and then reuses the space. Twenty-five minutes ago is refused. A time before the bulletin existed is refused too.
-6. Editors put a "being edited" sticker on a story they are revising. A second editor who wants it can wait as long as it takes, say "if it is taken, tell me now", wait three minutes and give up, or ask for whichever stories have no sticker. The sticker comes off when the first editor approves or discards.
+| Time | What happens | What Maya's long report shows |
+|---|---|---|
+| 09:00:00 | Maya starts a report | 3 |
+| 09:00:10 | Ben changes L26-001 to 9, not yet saved | 3 |
+| 09:00:20 | Ben saves (`COMMIT`) | 3 |
+| 09:00:40 | Maya starts a new report | 9 |
 
-| Moment | Committed in the database | A's report (snapshot at 0 s) | What B sees |
-|---|---|---|---|
-| 0 s, A starts a report | 3 | 3 | 3 |
-| 10 s, B updates, no commit | 3 | 3 | 9 (own draft) |
-| 20 s, B commits | 9 | 3 (rebuilt from undo) | 9 |
-| 40 s, A runs a new statement | 9 | the new statement sees 9 | 9 |
+Maya's first report keeps showing 3 from start to finish, even though the real value changed in the middle. The new report is a new photograph.
 
-**Where the analogy breaks.**
+- The photo album. Oracle keeps a record of old values for a while (undo). That is why you can ask for the table as it was ten minutes ago, with `AS OF TIMESTAMP`. The album has limited space. Ask too far back and the old pages are gone.
+- The reserved sticker. `SELECT ... FOR UPDATE` puts a "reserved" sticker on the rows. Anyone else who wants to change them must wait, give up at once (`NOWAIT`), give up after a few seconds (`WAIT n`), or skip the reserved rows (`SKIP LOCKED`). The sticker comes off at `COMMIT` or `ROLLBACK`.
 
-- A new printing is started for every request, but Oracle's "request" is each statement, not each session. Two SELECTs in a row can show different data if someone commits between them. To keep them consistent use `SET TRANSACTION READ ONLY`.
-- The correction slips are not full copies. Oracle keeps only the earlier version of changed rows in undo and rebuilds the old picture. The 15 minutes is the default `undo_retention` of 900 seconds. Yours may differ, and heavy changes can reuse the space sooner.
-- Stickers matter only to other sessions that write or use `FOR UPDATE`. A plain SELECT ignores them, and a sticker stays until its owner commits or rolls back.
+**Where the picture breaks.**
 
-The rest of this page, and Lab 12, use a shorter picture for the same idea: when you press Enter, Oracle takes a photograph of the data and your query reads the photograph. Flashback is the old photo album. The correction slips of the printing room are what Oracle really stores, in a place called undo.
+- The photograph is taken per statement, not per session. Two `SELECT`s in a row can show different data if someone commits between them. `SET TRANSACTION READ ONLY` makes them share one photograph.
+- The album holds only the rows that changed, not full copies, and the default is about 15 minutes (`undo_retention` of 900 seconds). Your database may differ.
+- A plain `SELECT` ignores the reserved sticker. Stickers only stop people who want to change the same rows.
 
 ## What Oracle actually does
 
@@ -55,15 +51,15 @@ The rest of this page, and Lab 12, use a shorter picture for the same idea: when
 6. Flashback query is the same machinery with a snapshot point you choose: `AS OF TIMESTAMP` or `AS OF SCN`. The limits are the undo still available (`ORA-01555`, snapshot too old) and the age of the table's definition (`ORA-01466`).
 7. `SELECT ... FOR UPDATE` is different. It does not read an old picture. It locks the current committed version of the rows it returns. If another transaction holds a lock, it waits, fails at once with `NOWAIT` (`ORA-00054`), gives up after `WAIT n` seconds (`ORA-30006`), or leaves the locked rows out with `SKIP LOCKED`. `COMMIT` or `ROLLBACK` releases the locks.
 
-| In Oracle | In the printing room |
+| In Oracle | With the photograph |
 |---|---|
-| statement starts | the request is stamped |
-| uncommitted change | a draft on the editor's desk |
-| undo | correction slips on the shelf |
-| `AS OF TIMESTAMP` | "print it as it was ten minutes ago" |
-| `ORA-01555` | the slips were thrown away |
-| `ORA-01466` | the bulletin did not exist yet |
-| `FOR UPDATE` | a "being edited" sticker |
+| statement starts | the photograph is taken |
+| uncommitted change | an unsaved change, in nobody else's photograph |
+| undo | the photo album |
+| `AS OF TIMESTAMP` | "show me the photo from ten minutes ago" |
+| `ORA-01555` | the old album pages are gone |
+| `ORA-01466` | the table did not exist yet |
+| `FOR UPDATE` | a "reserved" sticker |
 
 The picture below follows the lots and the sessions.
 

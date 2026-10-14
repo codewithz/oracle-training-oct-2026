@@ -16,36 +16,30 @@ Watch the animated page first: [Ranking, animated](../tutorials/02-ranking.html)
 
 Maya wants the best wafers of each lot: the two with the fewest defects. Topic 01 put a group figure beside every row, but "best two" needs something different: each row's position in a sorted list, restarting at 1 for every lot. Without a ranking function she would sort and count by hand, or write a subquery that counts how many rows are better than this one, for every row. The part that needs thought is a tie. Two wafers with zero defects are equally good, and the three functions answer "what position is the next wafer?" in three different ways.
 
-## The analogy: quiz night at the Anchor
+## The analogy: a school race
 
-Every Thursday the Anchor pub runs a quiz. Five teams, two rounds. Ruth the quizmaster marks the sheets, writes a position next to every team, and gives out hampers. Ruth has three habits for writing positions, and which one she uses decides who gets a hamper.
+Five pupils run a race and the teacher writes down the times. Two of them finish with the same time. Now she has to put a number next to each name, and she has three ways to do it.
 
-Round 1 is music. The Foxes and the Owls both scored 9, and the Foxes handed their sheet in first.
-
-1. She splits the sheets into one pile per round. A team's position in round 1 has no bearing on round 2. That is `PARTITION BY`.
-2. She lines up each pile, best score first: Foxes 9, Owls 9, Kites 7, Moths 4, Newts 2. That is `ORDER BY` inside `OVER`.
-3. She walks down the line once and writes a number on each sheet.
-4. Counting Ruth just counts: 1, 2, 3, 4, 5. The Owls get 2 only because the Foxes were handed in earlier. That is `ROW_NUMBER`.
-5. Olympic Ruth copies the number above for a tie, and otherwise writes the place the sheet stands in the line: 1, 1, 3, 4, 5. Nobody is second. That is `RANK`.
-6. Tidy Ruth also copies for a tie, but otherwise writes the previous number plus one: 1, 1, 2, 3, 4. That is `DENSE_RANK`.
-
-| Round 1 | Points | Just count | Share, skip | Share, no skip |
+| Pupil | Time | Just count | Share, skip | Share, no skip |
 |---|---|---|---|---|
-| Foxes | 9 | 1 | 1 | 1 |
-| Owls | 9 | 2 | 1 | 1 |
-| Kites | 7 | 3 | 3 | 2 |
-| Moths | 4 | 4 | 4 | 3 |
-| Newts | 2 | 5 | 5 | 4 |
+| Asha | 12.0 | 1 | 1 | 1 |
+| Ben | 12.1 | 2 | 2 | 2 |
+| Chen | 12.1 | 3 | 2 | 2 |
+| Dev | 13.0 | 4 | 4 | 3 |
+| Eli | 13.4 | 5 | 5 | 4 |
 
-Now the hampers. There are two per round, so the rule is "position 2 or better gets one". In round 2 the Owls scored 8 and the Kites, Foxes and Newts all scored 6 (handed in in that order). Counting Ruth gives hampers to the Owls and the Kites. Olympic Ruth and Tidy Ruth both see four teams at position 2 or better, so four hampers for two in the cupboard. Counting Ruth answers "who is in the first two slots?". The other two answer "who is within two places of the top?". The number you filter on decides which question you asked.
+- Just count: 1, 2, 3, 4, 5. Ben and Chen ran the same time but get different numbers. This is `ROW_NUMBER`.
+- Share, skip: tied pupils share a number and the next number is skipped, like at the Olympics. Two pupils are 2nd, so nobody is 3rd. This is `RANK`.
+- Share, no skip: tied pupils share a number and the next number follows on. Dev is 3rd. This is `DENSE_RANK`.
 
-Ruth also cannot hand out hampers while numbering the first sheet, because later sheets might still tie it. She finishes numbering and goes through the board a second time. That is the outer query in step 4.
+The difference matters when you pick winners. "Give a medal to everyone in the top 2": with just counting, Chen misses out although Chen ran exactly the same time as Ben. With either sharing method, Chen gets a medal too.
 
-**Where the analogy breaks.**
+If there were two races, 100 m and 200 m, each race would be numbered on its own. That is `PARTITION BY`.
 
-- Ruth knows who handed in first and says so. Oracle will not guess. With `ROW_NUMBER` and no tiebreaker Oracle picks one of the tied rows and may pick the other one next week.
-- A tie means the same value in every `ORDER BY` column. Add a second sort column and the teams are no longer tied.
-- Ruth's whiteboard is permanent. The positions Oracle calculates exist only in the result of the query.
+**Where the picture breaks.**
+
+- The teacher can say "Ben registered first". Oracle will not guess. With `ROW_NUMBER` and a tie, it picks one row and does not say which, and it can pick the other one next week. Add a second sort column, such as `wafer_id`, to make the order certain.
+- Nothing is written down. The numbers exist only in the result of the query and are worked out again each time it runs.
 
 ## What Oracle actually does
 
@@ -56,15 +50,15 @@ Ruth also cannot hand out hampers while numbering the first sheet, because later
 5. Attach the number as a new column. No row is removed. At the first row of the next partition the numbering restarts at 1.
 6. Finish the query. To keep only the first N, rank in an inner query and filter in an outer one.
 
-| In Oracle | At the Anchor |
+| In Oracle | In the race |
 |---|---|
-| `PARTITION BY` | one pile per round |
-| `ORDER BY` inside `OVER` | lining the pile up, best first |
-| `ROW_NUMBER` | Counting Ruth |
-| `RANK` | Olympic Ruth, a gap after a tie |
-| `DENSE_RANK` | Tidy Ruth, no gap |
-| second sort column | "who handed in first?" |
-| `WHERE rk <= 2` in an outer query | the second pass over the board |
+| `PARTITION BY` | one race, numbered on its own |
+| `ORDER BY` inside `OVER` | fastest first |
+| `ROW_NUMBER` | just count |
+| `RANK` | share, skip: a gap after a tie |
+| `DENSE_RANK` | share, no skip |
+| second sort column | "who registered first?" |
+| `WHERE rk <= 2` in an outer query | hand out medals after the numbers are written |
 
 ## Step 1: the three functions side by side
 

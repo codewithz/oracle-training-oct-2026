@@ -17,27 +17,26 @@ Open the animated page for this topic to see a pattern slide along a note: [06-r
 
 Maya has 147 status-change rows, and the interesting facts are buried in the free-text `note` column: which tool was involved, which ticket was raised, which readings were quoted. The tool appears as `MET01` in one note and `SPL02` in another, the ticket as `INC-20666` or `FAB-OPS-113`, and the spacing is irregular. `LIKE` finds a fixed word with `%` around it, but it cannot say "three capital letters followed by two digits". A regular expression describes a shape instead of a word, and the `REGEXP` functions check for it, cut it out, count it or replace it.
 
-## The analogy: Rosa at the parcel point
+## The analogy: a highlighter and a shape
 
-Rosa works at a parcel collection point. Drivers leave scribbled notes on slips. Every tracking number has the same shape: three capital letters and five digits, like `TRK48213`. Rosa has a laminated card that says exactly that. She does not know any particular number. She knows the shape. Today's slips:
+You do not know any particular tool ID, but you know the shape: three capital letters, then two digits, like `MET01`. You take a highlighter and read a note from left to right. At each character you ask: does the shape fit starting here? The first place it fits is the match, and you highlight it.
 
-- Slip A: `left with neighbour   TRK48213, ring twice`
-- Slip B: `customer away, back Tuesday`
-- Slip C: `damaged. see claim CLM90210 and TRK11450`
+| Note | Is there one? | The first one | How many | With them hidden |
+|---|---|---|---|---|
+| moved to MET01 after check | yes | MET01 | 1 | moved to XXX after check |
+| customer away, back Tuesday | no | blank | 0 | customer away, back Tuesday |
+| damaged, see CLM90 and MET07 | yes | CLM90 | 2 | damaged, see XXX and XXX |
 
-1. Rosa reads slip A from the left with the card under the text. At each character she asks whether the whole shape fits starting here. At the *l* of "left" it does not. She slides one character right and tries again, until the *T* of TRK, where three capitals and five digits fit. The first place it fits, reading from the left, is the match.
-2. Sorting: "Is there a tracking number on this slip?" A and C go in the yes tray, B in the no tray. Yes or no only. This is `REGEXP_LIKE`.
-3. Copying: "Write the number on the form." A gives TRK48213, B leaves the form blank, C gives CLM90210, the first match from the left. Asked for the second number she carries on after the first match and writes TRK11450. This is `REGEXP_SUBSTR`.
-4. Counting: A has 1, B has 0, C has 2. After a match she carries on after it and never reuses characters. This is `REGEXP_COUNT`.
-5. Tidying: "Black out every number and squash the long gaps on the copy for the customer file." Slip A becomes `left with neighbour XXX, ring twice`. This is `REGEXP_REPLACE`.
+- Is there one? A yes or no answer. That is `REGEXP_LIKE`, and it is what you put in `WHERE`.
+- The first one: copy out what the highlighter found. That is `REGEXP_SUBSTR`.
+- How many: count the highlighted bits. That is `REGEXP_COUNT`.
+- With them hidden: cover each highlighted bit with something else. That is `REGEXP_REPLACE`.
 
-When the card says "one or more digits", Rosa takes the whole run of digits, all of 48213, not just the 4. Regular expressions are greedy in the same way.
+**Where the picture breaks.**
 
-**Where the analogy breaks.**
-
-- Rosa would stop if she knew `ABC12345` was a postcode. Oracle only checks the shape. `[A-Z]{3}[0-9]{2}` accepts `ABC12` as happily as `MET01`.
-- Rosa notices a missing slip. A NULL note is neither a match nor a non-match: of the 147 notes, 21 are NULL and fall outside both `REGEXP_LIKE` and `NOT REGEXP_LIKE`.
-- Rosa writes on a copy. `REGEXP_REPLACE` returns new text and never changes the table.
+- You would know that `ABC12` is not a real tool. The shape `[A-Z]{3}[0-9]{2}` accepts it as happily as `MET01`. Whether a match means something real is your check.
+- A blank note is not "no". Oracle treats a NULL note as unknown, so `REGEXP_LIKE` on it is neither true nor false. 21 of the 147 notes are NULL, and they match neither the pattern nor its negation.
+- Nothing is changed in the table. `REGEXP_REPLACE` returns new text and leaves the stored note as it was.
 
 ## What Oracle actually does
 
@@ -50,15 +49,15 @@ When the card says "one or more digits", Rosa takes the whole run of digits, all
 
 For the note `hold per FAB-OPS-121, thickness 87.7 nm` (hist_id 14), the pattern `[0-9]+` matches `121` at character 18, `87` at 33 and `7` at 36. `REGEXP_COUNT` gives 3 and `REGEXP_REPLACE(note, '[0-9]+', '#')` gives `hold per FAB-OPS-#, thickness #.# nm`. The reading 87.7 counts as two numbers because the dot is not a digit.
 
-| In Oracle | At the parcel point |
+| In Oracle | With the highlighter |
 |---|---|
-| the pattern | Rosa's laminated card |
-| `REGEXP_LIKE` | yes tray or no tray |
-| `REGEXP_SUBSTR` | copy the number to the form |
-| `REGEXP_COUNT` | count the numbers on the slip |
-| `REGEXP_REPLACE` | black out or tidy on the copy |
-| greedy `+` | take the whole run of digits |
-| NULL note | a missing slip |
+| the pattern | the shape you describe |
+| `REGEXP_LIKE` | is there one? yes or no |
+| `REGEXP_SUBSTR` | copy out the first highlighted bit |
+| `REGEXP_COUNT` | count the highlighted bits |
+| `REGEXP_REPLACE` | cover the highlighted bits |
+| greedy `+` | highlight the whole run of digits |
+| NULL note | a blank note |
 
 ## The pieces you need
 

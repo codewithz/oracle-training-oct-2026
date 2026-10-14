@@ -17,38 +17,32 @@ Watch the animated page first: [Window functions, animated](../tutorials/01-wind
 
 Maya has the FINAL readings of two lots and wants to know which wafers sit above their own lot's average, and by how much. She needs the wafer's own reading and its lot average on the same line. `GROUP BY` cannot give her that, because it folds the five wafer rows of each lot into one line. By the time the average exists, `wafer_id` has gone, and adding it to the `SELECT` list only gets you `ORA-00979`. The old workaround was a `GROUP BY` subquery joined back to the readings. It reads the data twice and no longer says what you meant. A window function says it directly: work out the lot average and leave every row where it is.
 
-## The analogy: the waiter's slips
+## The analogy: marks in a class
 
-It is Friday night in a restaurant. Every guest gets a slip with their own bill, and the slips go into a tray by the till. At closing time the manager asks for two things.
+A teacher has the marks of two small classes. She can print them in two ways.
 
-The first request is for the accountant: "What did each table spend on average?" The cashier staples each table's slips together and writes one figure on the bundle. The accountant gets one number per table and never sees a guest. That is `GROUP BY`.
+Notice board (`GROUP BY`): one line per class, and the pupils are gone.
 
-The second request is for the feedback cards: "On each guest's slip, write the average bill at their table." This time the waiter does the job, and the order of the work matters.
+| Class | Average |
+|---|---|
+| 7A | 70 |
+| 7B | 60 |
 
-1. The waiter empties the tray onto the counter. Seven slips are there.
-2. The voided slip comes out first. Gita at table 7 sent her meal back, so her 40 goes in the bin before anything is added up.
-3. The rest are sorted into piles, one per table number. Table 7 has four slips and table 9 has two.
-4. Each pile is added up and divided by its number of slips. Table 7: 18 + 24 + 12 + 30 = 84, and 84 / 4 = 21. Table 9: 14 + 22 = 36, and 36 / 2 = 18.
-5. That average is written in the margin of every slip in the pile. Asha's slip now reads 18, and beside it 21.
-6. Every slip goes back in the tray. Six slips came out of the piles and six go back, each with one extra number.
+Report cards (`OVER`): one line per pupil, with the class average printed beside each mark.
 
-Then the manager says: "Only give me the slips above their table's average." The waiter cannot do that while sorting, because the table average does not exist until the whole pile has been added up. She finishes the pass and then goes through the tray a second time. That second pass is the inline view you will meet in step 6.
-
-| Table | Guest | Bill | Table average |
+| Pupil | Class | Mark | Class average |
 |---|---|---|---|
-| 7 | Asha | 18 | 21 |
-| 7 | Ben | 24 | 21 |
-| 7 | Chen | 12 | 21 |
-| 7 | Dev | 30 | 21 |
-| 7 | Gita | 40 (void, not counted) | |
-| 9 | Ella | 14 | 18 |
-| 9 | Farid | 22 | 18 |
+| Asha | 7A | 80 | 70 |
+| Ben | 7A | 60 | 70 |
+| Chen | 7B | 50 | 60 |
+| Dev | 7B | 70 | 60 |
 
-**Where the analogy breaks.**
+On a report card you can see at once that Asha is 10 above her class and Ben is 10 below. On the notice board you cannot. That is the whole idea: `GROUP BY` folds many rows into one, and `OVER` keeps every row and adds the answer beside it.
 
-- The waiter writes in ink. Oracle writes nothing into `MEASUREMENTS`. The average exists only in the result of this one query and is worked out again every time it runs.
-- Gita's slip went in the bin. A row removed by `WHERE` is still in the table, but it is missing from every window in this query. Change the `WHERE` and the averages change.
-- One Oracle query can carry several `OVER` clauses, each with its own piles: a lot average and an average over all rows, side by side.
+**Where the picture breaks.**
+
+- Nothing is written down. Oracle does not store the average in `MEASUREMENTS`; it works it out again each time the query runs.
+- The "class" is whatever `PARTITION BY` says. Leave it out and the whole school is one class.
 
 ## What Oracle actually does
 
@@ -60,15 +54,15 @@ Then the manager says: "Only give me the slips above their table's average." The
 
 Nothing is kept. The sorted rows live in memory and are thrown away when the query finishes.
 
-| In Oracle | In the restaurant |
+| In Oracle | In the class |
 |---|---|
-| a row | one guest's slip |
-| `WHERE` | binning the voided slip before adding up |
-| `GROUP BY` | the cashier's stapled bundles |
-| `PARTITION BY` | one pile per table |
-| `OVER (...)` | writing the answer in the margin of every slip |
-| `OVER ()` | the whole restaurant as one pile |
-| inline view or `WITH` | the second pass through the tray |
+| a row | one pupil's mark |
+| `WHERE` | leaving out pupils who were absent, before averaging |
+| `GROUP BY` | the notice board, one line per class |
+| `PARTITION BY` | which class a pupil is in |
+| `OVER (...)` | printing the average on every report card |
+| `OVER ()` | the whole school as one class |
+| inline view or `WITH` | print the report cards first, then pick out who is above average |
 
 ## The tables you will use
 
@@ -362,7 +356,7 @@ The same pattern, "window inside, filter outside", is the answer to almost every
 
 **"PARTITION BY is GROUP BY with another name."** They make the same groups and that is where the likeness ends. `GROUP BY lot_id` returns one row per lot. `PARTITION BY lot_id` returns every row, each with its lot's answer. A query whose only change is adding `OVER` always returns as many rows as passed its `WHERE`.
 
-**"The window column is part of the row, so I can filter on it."** Not in the same query. `WHERE` has finished before the window is calculated. A window function in `WHERE` gives `ORA-30483` for functions such as `RANK`, and `ORA-00934` for an aggregate such as `AVG`. Its alias gives `ORA-00904`. Do what the waiter did: calculate in an inline view or `WITH`, and filter outside.
+**"The window column is part of the row, so I can filter on it."** Not in the same query. `WHERE` has finished before the window is calculated. A window function in `WHERE` gives `ORA-30483` for functions such as `RANK`, and `ORA-00934` for an aggregate such as `AVG`. Its alias gives `ORA-00904`. Print the report cards first: calculate in an inline view or `WITH`, and filter outside.
 
 **"ORDER BY inside OVER just sorts the output."** It changes which rows each row sees, so it changes the numbers. With `OVER (PARTITION BY lot_id ORDER BY wafer_id)` the average beside L26-001-01 is 11.89, the wafer on its own, and beside L26-001-02 it is 11.94. Only the last wafer gets the full 11.97. The order of the output comes from the `ORDER BY` at the end of the query.
 
