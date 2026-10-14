@@ -30,29 +30,27 @@ DECLARE
     tl VARCHAR2(6) := pick_tool(p_n);
     th VARCHAR2(10) := TO_CHAR(10 + MOD(p_n * 37, 900) / 10, 'FM990.0');
   BEGIN
-    RETURN CASE MOD(p_n, 8)
-      WHEN 0 THEN 'hold - thk OOS at FINAL, ' || tl || ' read ' || th || 'nm vs target'
-      WHEN 1 THEN 'HOLD: defect cnt high after ' || tl || ' (INC-' || (20400 + MOD(p_n * 13, 600)) || ')'
-      WHEN 2 THEN 'eng req  hold  re-meas on ' || tl || ', see INC-' || (20400 + MOD(p_n * 17, 600))
-      WHEN 3 THEN 'Held by shift lead. particle count ' || (20 + MOD(p_n * 11, 80)) || ' on ' || tl
-      WHEN 4 THEN 'wafer bow suspected - ' || p_lot || ' on hold pending ' || tl || ' check'
-      WHEN 5 THEN 'hold per FAB-OPS-' || (100 + MOD(p_n, 40)) || ', thickness ' || th || ' nm'
-      WHEN 6 THEN 'Audit hold. contact j.tan@fabops.example ' || '(ext ' || (4100 + MOD(p_n * 7, 900)) || ')'
-      ELSE NULL
-    END;
+    IF MOD(p_n, 8) = 0 THEN RETURN 'hold - thk OOS at FINAL, ' || tl || ' read ' || th || 'nm vs target';
+    ELSIF MOD(p_n, 8) = 1 THEN RETURN 'HOLD: defect cnt high after ' || tl || ' (INC-' || (20400 + MOD(p_n * 13, 600)) || ')';
+    ELSIF MOD(p_n, 8) = 2 THEN RETURN 'eng req  hold  re-meas on ' || tl || ', see INC-' || (20400 + MOD(p_n * 17, 600));
+    ELSIF MOD(p_n, 8) = 3 THEN RETURN 'Held by shift lead. particle count ' || (20 + MOD(p_n * 11, 80)) || ' on ' || tl;
+    ELSIF MOD(p_n, 8) = 4 THEN RETURN 'wafer bow suspected - ' || p_lot || ' on hold pending ' || tl || ' check';
+    ELSIF MOD(p_n, 8) = 5 THEN RETURN 'hold per FAB-OPS-' || (100 + MOD(p_n, 40)) || ', thickness ' || th || ' nm';
+    ELSIF MOD(p_n, 8) = 6 THEN RETURN 'Audit hold. contact j.tan@fabops.example ' || '(ext ' || (4100 + MOD(p_n * 7, 900)) || ')';
+    ELSE RETURN NULL;
+    END IF;
   END;
   FUNCTION release_note(p_n PLS_INTEGER) RETURN VARCHAR2 IS
     tl VARCHAR2(6) := pick_tool(p_n + 3);
     th VARCHAR2(10) := TO_CHAR(10 + MOD(p_n * 41, 900) / 10, 'FM990.0');
   BEGIN
-    RETURN CASE MOD(p_n, 6)
-      WHEN 0 THEN 're-meas on ' || tl || ' ok, ' || th || 'nm within spec'
-      WHEN 1 THEN 'released by eng - defect cnt ' || (3 + MOD(p_n * 5, 20)) || ' within limit'
-      WHEN 2 THEN 'RELEASED. recheck ' || tl || ' pass (INC-' || (20400 + MOD(p_n * 19, 600)) || ')'
-      WHEN 3 THEN 'ok to continue   ' || tl
-      WHEN 4 THEN NULL
-      ELSE 'hold cleared, no action'
-    END;
+    IF MOD(p_n, 6) = 0 THEN RETURN 're-meas on ' || tl || ' ok, ' || th || 'nm within spec';
+    ELSIF MOD(p_n, 6) = 1 THEN RETURN 'released by eng - defect cnt ' || (3 + MOD(p_n * 5, 20)) || ' within limit';
+    ELSIF MOD(p_n, 6) = 2 THEN RETURN 'RELEASED. recheck ' || tl || ' pass (INC-' || (20400 + MOD(p_n * 19, 600)) || ')';
+    ELSIF MOD(p_n, 6) = 3 THEN RETURN 'ok to continue   ' || tl;
+    ELSIF MOD(p_n, 6) = 4 THEN RETURN NULL;
+    ELSE RETURN 'hold cleared, no action';
+    END IF;
   END;
   PROCEDURE add_row(p_lot VARCHAR2, p_old VARCHAR2, p_new VARCHAR2, p_at DATE, p_note VARCHAR2) IS
   BEGIN
