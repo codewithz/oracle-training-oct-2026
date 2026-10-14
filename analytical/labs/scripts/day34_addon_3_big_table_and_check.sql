@@ -29,10 +29,6 @@ JOIN  (SELECT wafer_id, lot_id, ROW_NUMBER() OVER (ORDER BY wafer_id) AS rn FROM
 JOIN  lots     l ON l.lot_id = w.lot_id
 JOIN  products p ON p.product_id = l.product_id;
 COMMIT;
-BEGIN
-  DBMS_STATS.GATHER_TABLE_STATS(USER, 'MEASUREMENTS_BIG');
-END;
-/
 CREATE TABLE error_log (
   log_id     NUMBER(8)       CONSTRAINT error_log_pk PRIMARY KEY,
   logged_at  TIMESTAMP       DEFAULT SYSTIMESTAMP NOT NULL,
